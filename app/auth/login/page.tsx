@@ -2,12 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,11 +17,30 @@ export default function AdminLogin() {
     setError('');
 
     try {
-      // TODO: Implement Supabase login
-      console.log('Login attempt:', { email, password });
-      // Redirect to admin dashboard
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        setError(data.error || 'Login gagal');
+        return;
+      }
+
+      // Store token di localStorage
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+
+      // Redirect ke admin dashboard
+      router.push('/admin');
     } catch (err) {
-      setError('Login gagal. Periksa email dan password Anda.');
+      setError('Terjadi kesalahan. Silakan coba lagi.');
+      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }
